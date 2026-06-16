@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { MapPin, Clock, Star, Heart, Coffee, Utensils, Sparkles, Map } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { MapPin, Clock, Star, Heart, Coffee, Utensils, Sparkles, Map, CheckCircle2 } from 'lucide-react';
 
 const initialData = {
   day1: [
@@ -51,6 +51,20 @@ function IconForType({ type, className }) {
 export default function App() {
   const [plan, setPlan] = useState(initialData);
   const [activeDay, setActiveDay] = useState('day1');
+  const [visited, setVisited] = useState(() => {
+    const saved = localStorage.getItem('dalat-visited');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('dalat-visited', JSON.stringify(visited));
+  }, [visited]);
+
+  const toggleVisited = (itemId) => {
+    setVisited(prev =>
+      prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]
+    );
+  };
 
   const handleTimeChange = (dayKey, itemId, newTime) => {
     setPlan(prev => ({
@@ -115,7 +129,9 @@ export default function App() {
 
         {/* Plan Timeline */}
         <div className="space-y-6">
-          {plan[activeDay].map((item, index) => (
+          {plan[activeDay].map((item, index) => {
+            const isVisited = visited.includes(item.id);
+            return (
             <div key={item.id} className="relative flex items-start gap-4 group">
               
               {/* Timeline line */}
@@ -139,25 +155,45 @@ export default function App() {
               </div>
 
               {/* Card */}
-              <div className="flex-grow bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-green-100 hover:shadow-md hover:border-green-300 transition-all group-hover:-translate-y-0.5">
+              <div className={`flex-grow rounded-2xl p-4 sm:p-5 shadow-sm border transition-all group-hover:-translate-y-0.5 ${
+                isVisited
+                  ? 'bg-green-50 border-green-300 opacity-80'
+                  : 'bg-white border-green-100 hover:shadow-md hover:border-green-300'
+              }`}>
                 <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 flex-wrap">
-                      {item.name}
-                      {item.type === 'must-go' && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-rose-100 text-rose-600">
-                          <Heart size={10} fill="currentColor"/> Must Go
-                        </span>
-                      )}
-                      {item.highlight && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-600">
-                          <Star size={10} fill="currentColor"/> {item.highlight}
-                        </span>
-                      )}
-                    </h3>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => toggleVisited(item.id)}
+                        className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                          isVisited
+                            ? 'bg-green-500 border-green-500 text-white'
+                            : 'border-slate-300 hover:border-green-400'
+                        }`}
+                      >
+                        {isVisited && <CheckCircle2 size={16} />}
+                      </button>
+                      <h3 className={`text-lg font-bold flex items-center gap-2 flex-wrap ${
+                        isVisited ? 'text-slate-500 line-through' : 'text-slate-800'
+                      }`}>
+                        {item.name}
+                        {item.type === 'must-go' && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-rose-100 text-rose-600">
+                            <Heart size={10} fill="currentColor"/> Must Go
+                          </span>
+                        )}
+                        {item.highlight && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-600">
+                            <Star size={10} fill="currentColor"/> {item.highlight}
+                          </span>
+                        )}
+                      </h3>
+                    </div>
                     
                     {item.address && (
-                      <div className="flex items-start gap-1.5 text-slate-500 mt-2 text-sm">
+                      <div className={`flex items-start gap-1.5 mt-2 text-sm ml-9 ${
+                        isVisited ? 'text-slate-400' : 'text-slate-500'
+                      }`}>
                         <MapPin size={16} className="flex-shrink-0 mt-0.5 text-green-500" />
                         <span>{item.address}</span>
                       </div>
@@ -178,7 +214,8 @@ export default function App() {
               </div>
 
             </div>
-          ))}
+            );
+          })}
           
           {plan[activeDay].length === 0 && (
             <div className="text-center py-10 text-slate-400">
