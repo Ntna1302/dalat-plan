@@ -75,7 +75,6 @@ export default function App() {
               <Sparkles size={16} /> 4 Ngày 3 Đêm
             </div>
             <h1 className="text-4xl font-bold mb-2 tracking-tight">Kế Hoạch Vi Vu Đà Lạt 🌲</h1>
-            <p className="text-green-50 text-lg opacity-90">Chữa lành tâm hồn cùng sương mù và đồ ăn ngon</p>
           </div>
         </header>
 
