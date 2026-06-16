@@ -6,7 +6,8 @@ const initialData = {
     { id: 1, time: "", name: "Bún Bò Thố Đá O 9", address: "23 Nguyễn Chí Thanh, Xuân Hương", type: "food" },
     { id: 2, time: "15:00 - 19:00", name: "Bánh Ít Ram", address: "40 Ngô Thì Sỹ, Phường Xuân Hương", type: "snack" },
     { id: 3, time: "", name: "Tui nướng lavender", address: "17/6 Nguyễn Trãi", type: "dinner", highlight: "100000000/10 !!!" },
-    { id: 4, time: "", name: "Phô mai nướng", address: "145 Nguyễn Văn Trỗi", type: "must-go" }
+    { id: 4, time: "", name: "Phô mai nướng", address: "145 Nguyễn Văn Trỗi", type: "must-go" },
+    { id: 17, time: "", name: "Bánh Tráng Nướng Dì Đinh", address: "26 Hoàng Diệu, Cam Ly", type: "food" }
   ],
   day2: [
     { id: 5, time: "", name: "Bánh Căn Ngọc", address: "5 Ba Tháng Tư, Xuân Hương", type: "food" },
@@ -25,7 +26,6 @@ const initialData = {
     { id: 16, time: "", name: "Chân Gà Quái Thú", address: "16B Hoàng Văn Thụ, Xuân Hương", type: "snack" }
   ],
   day4: [
-    { id: 17, time: "", name: "Bánh Tráng Nướng Dì Đinh", address: "26 Hoàng Diệu, Cam Ly", type: "food" },
     { id: 18, time: "", name: "Pami Coffee", address: "49 Đường Hai Bà Trưng, Phường 6", type: "cafe" },
     { id: 19, time: "", name: "Cái cốc mẻ", address: "15 Ngô Huy Diễn, Phường 5", type: "cafe" }
   ]
