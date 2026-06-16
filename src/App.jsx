@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { MapPin, Clock, Star, Heart, Coffee, Utensils, Sparkles, Map, CheckCircle2 } from 'lucide-react';
+import { MapPin, Clock, Star, Heart, Coffee, Utensils, Sparkles, Map, CheckCircle2, Settings, Send, X, Mail } from 'lucide-react';
+import emailjs from '@emailjs/browser';
 
 const initialData = {
   day1: [
@@ -51,6 +52,20 @@ function IconForType({ type, className }) {
 export default function App() {
   const [plan, setPlan] = useState(initialData);
   const [activeDay, setActiveDay] = useState('day1');
+  const [showSettings, setShowSettings] = useState(false);
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [emailTo, setEmailTo] = useState('');
+  const [sending, setSending] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [emailjsConfig, setEmailjsConfig] = useState(() => {
+    const saved = localStorage.getItem('dalat-emailjs');
+    return saved ? JSON.parse(saved) : { serviceId: '', templateId: '', publicKey: '' };
+  });
+
+  useEffect(() => {
+    localStorage.setItem('dalat-emailjs', JSON.stringify(emailjsConfig));
+  }, [emailjsConfig]);
+
   const [visited, setVisited] = useState(() => {
     const saved = localStorage.getItem('dalat-visited');
     return saved ? JSON.parse(saved) : [];
@@ -64,6 +79,48 @@ export default function App() {
     setVisited(prev =>
       prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]
     );
+  };
+
+  const formatPlanForEmail = () => {
+    const dayLabels = { day1: 'Thứ 6', day2: 'Thứ 7', day3: 'Chủ Nhật', day4: 'Thứ 2' };
+    const typeMap = { food: '🍜', cafe: '☕', dinner: '🍖', snack: '🍿', 'must-go': '⭐' };
+    let text = '📋 KẾ HOẠCH VI VU ĐÀ LẠT - 4 NGÀY 3 ĐÊM\n\n';
+    Object.entries(plan).forEach(([key, items]) => {
+      text += `=== ${dayLabels[key]} ===\n`;
+      items.forEach((item, i) => {
+        const icon = typeMap[item.type] || '📍';
+        const time = item.time || '...';
+        const done = visited.includes(item.id) ? ' ✅' : '';
+        text += `  ${i+1}. [${time}] ${icon} ${item.name}${done}\n     📍 ${item.address}\n`;
+      });
+      text += '\n';
+    });
+    text += '---\nChúc bạn có chuyến đi tuyệt vời! 🌲';
+    return text;
+  };
+
+  const sendEmail = async (e) => {
+    e.preventDefault();
+    if (!emailjsConfig.serviceId || !emailjsConfig.templateId || !emailjsConfig.publicKey) {
+      alert('Vui lòng cấu hình EmailJS trong ⚙️ Settings trước!');
+      return;
+    }
+    if (!emailTo) return;
+    setSending(true);
+    try {
+      await emailjs.send(
+        emailjsConfig.serviceId,
+        emailjsConfig.templateId,
+        { to_email: emailTo, plan_details: formatPlanForEmail(), from_name: 'Dalat Plan' },
+        emailjsConfig.publicKey
+      );
+      setEmailSent(true);
+      setTimeout(() => { setShowEmailForm(false); setEmailSent(false); }, 2000);
+    } catch (err) {
+      alert('Gửi thất bại: ' + err.text);
+    } finally {
+      setSending(false);
+    }
   };
 
   const handleTimeChange = (dayKey, itemId, newTime) => {
@@ -224,8 +281,98 @@ export default function App() {
           )}
         </div>
 
+        {/* Email & Settings Buttons */}
+        <div className="flex gap-3 justify-center mb-8">
+          <button
+            onClick={() => setShowEmailForm(true)}
+            className="inline-flex items-center gap-2 px-5 py-3 bg-white rounded-xl border border-green-200 shadow-sm text-green-700 font-medium hover:bg-green-50 hover:border-green-300 transition-all"
+          >
+            <Mail size={18} /> Gửi Email Nhắc Nhở
+          </button>
+          <button
+            onClick={() => setShowSettings(true)}
+            className="inline-flex items-center gap-2 px-5 py-3 bg-white rounded-xl border border-green-200 shadow-sm text-slate-600 font-medium hover:bg-green-50 hover:border-green-300 transition-all"
+          >
+            <Settings size={18} /> Cấu Hình
+          </button>
+        </div>
+
+        {/* Email Form Modal */}
+        {showEmailForm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm" onClick={() => setShowEmailForm(false)}>
+            <div className="bg-white rounded-2xl p-6 shadow-xl max-w-md w-full" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-lg text-slate-800">Gửi Email Nhắc Nhở</h3>
+                <button onClick={() => setShowEmailForm(false)} className="text-slate-400 hover:text-slate-600">
+                  <X size={20} />
+                </button>
+              </div>
+              {emailSent ? (
+                <div className="text-center py-6 text-green-600 font-medium">
+                  <Mail size={40} className="mx-auto mb-2" />
+                  Đã gửi email thành công! ✅
+                </div>
+              ) : (
+                <form onSubmit={sendEmail}>
+                  <label className="block text-sm font-medium text-slate-600 mb-1.5">Email nhận</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="your@email.com"
+                    value={emailTo}
+                    onChange={e => setEmailTo(e.target.value)}
+                    className="w-full border border-green-200 rounded-lg py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-green-400 mb-4"
+                  />
+                  <button
+                    type="submit"
+                    disabled={sending}
+                    className="w-full inline-flex items-center justify-center gap-2 py-2.5 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-all disabled:opacity-50"
+                  >
+                    {sending ? 'Đang gửi...' : <><Send size={16} /> Gửi Ngay</>}
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Settings Modal */}
+        {showSettings && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm" onClick={() => setShowSettings(false)}>
+            <div className="bg-white rounded-2xl p-6 shadow-xl max-w-md w-full" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-lg text-slate-800">Cấu Hình EmailJS</h3>
+                <button onClick={() => setShowSettings(false)} className="text-slate-400 hover:text-slate-600">
+                  <X size={20} />
+                </button>
+              </div>
+              <p className="text-sm text-slate-500 mb-4">
+                Đăng ký miễn phí tại <strong>emailjs.com</strong>, tạo Service + Template, rồi nhập thông tin vào đây.
+              </p>
+              {['serviceId', 'templateId', 'publicKey'].map(field => (
+                <div key={field} className="mb-3">
+                  <label className="block text-xs font-medium text-slate-500 uppercase mb-1">{field}</label>
+                  <input
+                    type="text"
+                    value={emailjsConfig[field]}
+                    onChange={e => setEmailjsConfig(prev => ({ ...prev, [field]: e.target.value }))}
+                    className="w-full border border-green-200 rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                    placeholder={field === 'publicKey' ? 'public_xxxxxxxxx' : field === 'serviceId' ? 'service_xxxxxx' : 'template_xxxxxx'}
+                  />
+                </div>
+              ))}
+              <button
+                onClick={() => setShowSettings(false)}
+                className="w-full py-2.5 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-all"
+              >
+                Lưu
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Footer */}
-        <footer className="mt-12 text-center text-sm text-slate-400 pb-8">
+        <footer className="text-center text-sm text-slate-400 pb-8">
           <p>Chúc bạn có một chuyến đi Đà Lạt thật tuyệt vời! ☁️</p>
         </footer>
 
