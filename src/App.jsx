@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapPin, Clock, Star, Heart, Coffee, Utensils, Sparkles, Map, CheckCircle2, Settings, Send, X, Mail } from 'lucide-react';
+import { MapPin, Clock, Star, Heart, Coffee, Utensils, Sparkles, Map, CheckCircle2, Settings, Send, X, Mail, Bell } from 'lucide-react';
 import emailjs from '@emailjs/browser';
 
 const initialData = {
@@ -32,6 +32,9 @@ const initialData = {
   ]
 };
 
+const dayMap = { 5: 'day1', 6: 'day2', 0: 'day3', 1: 'day4' };
+const todayKey = dayMap[new Date().getDay()] || null;
+
 const daysList = [
   { key: 'day1', label: 'Thứ 6', desc: 'Ngày 1' },
   { key: 'day2', label: 'Thứ 7', desc: 'Ngày 2' },
@@ -51,7 +54,30 @@ function IconForType({ type, className }) {
 
 export default function App() {
   const [plan, setPlan] = useState(initialData);
-  const [activeDay, setActiveDay] = useState('day1');
+  const [activeDay, setActiveDay] = useState(todayKey || 'day1');
+  const [showNotifyBanner, setShowNotifyBanner] = useState(!!todayKey);
+  const [notified, setNotified] = useState(() => localStorage.getItem('dalat-notified-date') === new Date().toDateString());
+
+  useEffect(() => {
+    if (todayKey && !notified && 'Notification' in window && Notification.permission === 'granted') {
+      const dayLabel = daysList.find(d => d.key === todayKey)?.label || '';
+      const places = plan[todayKey].map(i => i.name).join(', ');
+      new Notification('📋 Hôm nay đi Đà Lạt!', { body: `${dayLabel}: ${places}` });
+      localStorage.setItem('dalat-notified-date', new Date().toDateString());
+      setNotified(true);
+    }
+  }, []);
+
+  const requestNotify = () => {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'granted') {
+      setShowNotifyBanner(false);
+      return;
+    }
+    Notification.requestPermission().then(perm => {
+      if (perm === 'granted') setShowNotifyBanner(false);
+    });
+  };
   const [showSettings, setShowSettings] = useState(false);
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [emailTo, setEmailTo] = useState('');
@@ -149,6 +175,35 @@ export default function App() {
             <h1 className="text-4xl font-bold mb-2 tracking-tight">Kế Hoạch Vi Vu Đà Lạt 🌲</h1>
           </div>
         </header>
+
+        {/* Today Banner */}
+        {todayKey && showNotifyBanner && (
+          <div className="bg-gradient-to-r from-emerald-500 to-green-400 rounded-2xl p-5 mb-6 shadow-md text-white flex items-start gap-4">
+            <div className="flex-shrink-0 bg-white/20 p-2.5 rounded-full">
+              <Bell size={24} />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-lg">📅 Hôm Nay - {daysList.find(d => d.key === todayKey)?.label}</h3>
+              <ul className="mt-2 space-y-1 text-sm text-white/90">
+                {plan[todayKey].map(item => (
+                  <li key={item.id} className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-white/60 rounded-full" />
+                    {item.time && <span className="font-medium">[{item.time}]</span>} {item.name}
+                  </li>
+                ))}
+              </ul>
+              <button
+                onClick={requestNotify}
+                className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition-all"
+              >
+                <Bell size={14} /> Bật thông báo
+              </button>
+            </div>
+            <button onClick={() => setShowNotifyBanner(false)} className="flex-shrink-0 text-white/60 hover:text-white">
+              <X size={18} />
+            </button>
+          </div>
+        )}
 
         {/* Must Go Alert */}
         <div className="bg-white rounded-2xl p-5 mb-8 shadow-sm border border-green-100 flex flex-col sm:flex-row gap-4 items-center">
