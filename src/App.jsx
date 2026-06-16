@@ -117,7 +117,8 @@ export default function App() {
       setEmailSent(true);
       setTimeout(() => { setShowEmailForm(false); setEmailSent(false); }, 2000);
     } catch (err) {
-      alert('Gửi thất bại: ' + err.text);
+      const msg = err?.text || err?.message || JSON.stringify(err);
+      alert('Gửi thất bại!\n\n' + msg + '\n\n💡 Vào ⚙️ Cấu Hình kiểm tra lại thông tin, hoặc reconnect Gmail service tại emailjs.com');
     } finally {
       setSending(false);
     }
@@ -348,6 +349,9 @@ export default function App() {
               </div>
               <p className="text-sm text-slate-500 mb-4">
                 Đăng ký miễn phí tại <strong>emailjs.com</strong>, tạo Service + Template, rồi nhập thông tin vào đây.
+              </p>
+              <p className="text-xs text-amber-600 bg-amber-50 rounded-lg p-2.5 mb-4">
+                ⚠️ Nếu dùng Gmail service, vào <strong>Email Services</strong> → nhấn <strong>Reconnect</strong> để cấp lại quyền đầy đủ.
               </p>
               {['serviceId', 'templateId', 'publicKey'].map(field => (
                 <div key={field} className="mb-3">
